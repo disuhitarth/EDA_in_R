@@ -1,0 +1,867 @@
+---
+title: "Final Project Group 36"
+date: "27/7/2021"
+author: "Group 36"
+# theme: sandstone
+source : "Ames"
+output: html_notebook
+---
+
+```{css, echo=FALSE}
+# body {
+# background-color: #E0EBEE;
+# }
+```
+
+**Team Members**
+
+- Hitarth Mehta&nbsp;&nbsp;  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W0776103       
+- Nishtha Vijay Mistri&nbsp;&nbsp;  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;W0780925
+- Devarsh Harendrabhai Modi&nbsp;&nbsp; &nbsp; W0782798
+- Gargiben Hardikkumar Patel&nbsp;&nbsp; &nbsp; W0782010
+
+</br>
+
+**Academic Integrity**
+
+We, Hitarth Mehta, Nishtha Vijay Mistri,Devarsh Harendrabhai Modi, and Gargiben Hardikkumar Patel, hereby state that we have not communicated with or gained information in any way from any person or resource that would violate the College’s academic integrity policies, and that all work presented is our own. In addition, we also agree not to share our work in any way, before or after submission, that would violate the College’s academic integrity policies.
+
+</br></br>
+
+
+
+```{r figurename, echo=FALSE, fig.cap="my caption", out.width = '80%'}
+knitr::include_graphics("sb.png")
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# The echo=FALSE chunk option makes sure that this code chunk is not visible in the knitted output. You can load libraries and wrangle data here. As an example, I am loading tidyverse and the mtcars dataset.
+
+library(AmesHousing)
+library(modelsummary)
+library(modeldata)
+library(dplyr)
+library(ggThemeAssist)
+library(esquisse)
+library(shiny)
+library(tidyverse)
+library(corrplot)
+library(skimr)
+library(broom)
+library(rmarkdown)
+library(equatiomatic )
+data(ames, package = "modeldata")
+data(ames)
+ames_n <- ames %>% 
+  select(where(is.numeric))
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+glimpse(ames_n)
+
+```
+
+# Exploratory Data Analysis {.tabset .tabset-pills}
+
+
+## Summary
+
+```{r}
+
+skim(ames_n)
+
+```
+
+```{r}
+
+
+```
+
+
+
+```{r}
+
+ames_n %>% drop_na(Year_Sold,Sale_Price) %>%
+  group_by(Year_Sold) %>% 
+  summarize(mean_SalePrice = round(mean(Sale_Price))) 
+
+```
+
+
+
+
+## Univariate plots
+
+```{r }
+
+Br <- ames_n %>% count(Bedroom_AbvGr)
+Br <- na.omit(Br)
+
+ggplot(Br,
+       aes(x = Bedroom_AbvGr,y = n)) +
+  geom_bar(stat="identity",fill = "skyblue2")+
+  geom_text(aes(label = n), vjust = 0)+
+labs(title = "Bar Graph for number of bedrooms",x = "Number of Bedrooms",y = "Count of Houses")
+
+```
+Most houses have 3 bedrooms and very rare house with eight bedrooms.
+
+```{r}
+
+Bt <- ames_n %>% count(Full_Bath)
+Bt <- na.omit(Bt)
+
+ggplot(Bt,
+       aes(x = Full_Bath,y = n)) +
+  geom_bar(stat = "identity",fill = "skyblue2")+
+  geom_text(aes(label = n), vjust = 0)+
+labs(title = "Bar Graph for number of bathrooms",x = "Number of Bathrooms",y = "Count of Houses")
+
+```
+Most houses have 2 bathrooms and only 12 houses with no bathrooms.
+
+
+```{r}
+
+Gc <- ames_n %>% count(Garage_Cars)
+Gc <- na.omit(Gc)
+
+ggplot(Gc,
+       aes(x = Garage_Cars,y = n)) +
+  geom_bar(stat = "identity",fill = "skyblue2")+
+  geom_text(aes(label = n), vjust = 0)+
+labs(title = "Bar Graph for size of garage by car capacity",x = "Car Capacity in garage",y = "Count of Houses")
+
+```
+
+There are more houses having garage capacity of two cars.
+
+
+```{r}
+
+Tr <- ames_n %>% count(TotRms_AbvGrd)
+Tr <- na.omit(Tr)
+
+ggplot(Tr,
+       aes(x = TotRms_AbvGrd,y = n)) +
+  geom_bar(stat = "identity",fill = "skyblue2")+
+  geom_text(aes(label = n), vjust = 0)+
+labs(title = "Bar Graph for Total Rooms",x = "Number of total rooms",y = "Count of Houses")
+
+```
+
+There are more number of houses with total 6 rooms and the counts of houses declines gradually as the total number of rooms tends to increase.
+
+```{r}
+Kt <- ames_n %>% count(Kitchen_AbvGr)
+Kt <- na.omit(Kt)
+
+ggplot(Kt,
+       aes(x = Kitchen_AbvGr,y = n)) +
+  geom_bar(stat="identity",fill = "skyblue2")+
+  geom_text(aes(label = n), vjust = 0)+
+labs(title = "Bar Graph for number of kitchens",x = "Number of Kitchens",y = "Count of Houses")
+
+```
+There are most common houses with 1 kitchen in the house.
+
+```{r}
+Fp <- ames_n %>% count(Fireplaces)
+Fp<- na.omit(Fp)
+
+ggplot(Fp,
+       aes(x = Fireplaces,y = n)) +
+  geom_bar(stat="identity",fill = "skyblue2")+
+  geom_text(aes(label = n), vjust = 0)+
+labs(title = "Bar Graph for number of Fireplaces",x = "Number of Fireplaces",y = "Count of Houses")
+
+```
+There are many houses with no fireplaces and very few houses have more than 1  fireplace.
+
+```{r}
+library(ggplot2)
+
+Sp <- ames_n %>% count(Sale_Price)
+Sp <- na.omit(Sp)
+
+ggplot(Sp,
+       aes(x = Sale_Price)) +
+  geom_histogram(fill = "skyblue2",bins=40,color="black")+
+  scale_x_continuous(labels = scales::comma)+
+  geom_vline(aes(xintercept=mean(Sale_Price)),
+             color="red")+
+labs(title = "Histogram for Sale Price",x = "Sale Price (in $)",y = "Count of Houses")
+```
+
+Graph for Sale Price is right skewed and unimodal.Rising with the amount of $200000, the number of houses declines as it gets expensive.
+
+```{r}
+print(paste0("Mean : ","$", round(mean(Sp$Sale_Price))))
+```
+
+```{r}
+ggplot(Sp,
+       aes(x = Sale_Price)) +
+  geom_boxplot()+
+  scale_x_continuous(labels = scales::comma)+
+labs(title = "Box Plot for Sale Price",x = "Sale Price")
+
+```
+
+
+
+```{r}
+
+library(ggplot2)
+Yr <- ames_n %>% count(Year_Sold)
+Yr <- na.omit(Yr)
+
+ggplot(Yr,
+       aes(x = Year_Sold,y=n)) +
+  geom_col(fill = "skyblue2")+
+  geom_text(aes(label = n), vjust = 0)+
+labs(title = "Counts of houses sold each year",x = "Year",y = "Count of Houses")
+
+```
+
+From the graph,for the year 2006 and 2008 the sales of houses remains almost same while maximum houses were sold in the year 2007 and the least houses were sold in the year 2010.
+
+```{r}
+
+library(ggplot2)
+ggplot(ames_n,
+       aes(x = Lot_Area)) +
+  geom_histogram(fill = "skyblue2",bins=35,color="black")+
+  geom_vline(aes(xintercept=mean(Lot_Area)),
+             color="red")+
+labs(title = "Lot Area of houses ", x = "Lot Area (in sq ft)", y = "Count of Houses")
+
+```
+
+
+```{r}
+print(paste0("Mean : ", round(mean(ames_n$Lot_Area))," Sq ft"))
+```
+Distribution for lot area of houses is extremely right skewed and most houses have lot sizes less than
+50000 square feet.
+
+
+
+```{r}
+
+library(ggplot2)
+ggplot(ames_n,
+       aes(x = Gr_Liv_Area)) +
+  geom_histogram(fill = "skyblue2",bins=35,color="black")+
+  geom_vline(aes(xintercept=mean(Gr_Liv_Area)),
+             color="red")+
+labs(title = "Ground Living Area of houses ", x = "Ground Living Area (in sq ft)", y = "Count of Houses")
+
+```
+```{r}
+print(paste0("Mean : ", round(mean(ames_n$Gr_Liv_Area)), " Sq ft"))
+```
+The distribution for living area of houses(in sq ft) is multimodal and right skewed.It can be seen that many houses have less living areas.
+
+
+```{r}
+library(ggplot2)
+ggplot(ames_n,
+       aes(x = Garage_Area)) +
+  geom_histogram(fill = "skyblue2",bins=35,color="black")+
+  geom_vline(aes(xintercept=mean(Garage_Area)),
+             color="red")+
+labs(title = "Garage Area of houses ", x = "Garage Area (in sq ft)", y = "Count of Houses")
+
+```
+
+```{r}
+print(paste0("Mean : ", round(mean(ames_n$Garage_Area))," Sq ft"))
+
+```
+The distribution is right skewed and it can be seen that most houses have garage area of nearly 500 sq feet.
+
+
+```{r}
+library(ggplot2)
+ggplot(ames_n,
+       aes(x = Total_Bsmt_SF)) +
+  geom_histogram(fill = "skyblue2",bins=35,color="black")+
+  geom_vline(aes(xintercept=mean(Total_Bsmt_SF)),
+             color="red")+
+labs(title = "Basement Area of houses ", x = "Basement Area (in sq ft)", y = "Count of Houses")
+
+```
+```{r}
+print(paste0("Mean : ", round(mean(ames_n$Total_Bsmt_SF))," Sq ft"))
+```
+
+Distribution is unimodal and right skewed.There are many houses that have basement area nearly to 1000 sq feet while few houses do not have basement.
+
+
+```{r}
+
+library(ggplot2)
+ggplot(ames_n,
+       aes(x = First_Flr_SF)) +
+  geom_histogram(fill = "skyblue2",bins=35,color="black")+
+  geom_vline(aes(xintercept=mean(First_Flr_SF)),
+             color="red")+
+labs(title = "First Floor Area of houses ", x = "First floor Area (in sq ft)", y = "Count of Houses")
+
+```
+```{r}
+print(paste0("Mean : ", round(mean(ames_n$First_Flr_SF))," Sq ft"))
+```
+The distribution of basemenent area is right skewed and unimodal.
+
+
+
+## Bivariate plots
+
+
+```{r}
+ggplot(ames_n,
+       aes(x = Garage_Area, y = Sale_Price)) +
+  geom_point(alpha=0.4)+
+  scale_y_continuous(labels = scales::comma)+
+  geom_smooth(method = "lm", se = F)+
+labs(title = "Distribution of  garage area with sale price",x = "Garage Area (in sq ft)",y = "Sale Price (in $)")
+
+```
+
+```{r}
+print(paste0("Correlation : ",cor(ames_n$Sale_Price,ames_n$Garage_Area)))
+```
+Garage area vs sale price shows moderately positive linear relationship. So, as garage area (in sq ft) increases, sales price($) tends to increase.
+
+
+
+```{r}
+
+ggplot(ames_n,
+       aes(x = Total_Bsmt_SF, y = Sale_Price)) +
+  geom_point(alpha=0.4)+
+  scale_y_continuous(labels = scales::comma)+
+  geom_smooth(method = "lm", se = F)+
+labs(title = "Distribution of  basement area with sale price",x = "Basement Area (in sq ft)",y = "Sale Price (in $)")
+
+```
+
+```{r}
+print(paste0("Correlation : ",cor(ames_n$Sale_Price,ames_n$Total_Bsmt_SF)))
+```
+There is a positive,linear relationship between basement area (sq ft) and sale price($).So,as basement area increases, sale price tends to increase.
+
+
+
+```{r}
+lot_out <- ames %>% filter(Lot_Area<100000)
+
+ggplot(lot_out,
+       aes(x = Lot_Area, y = Sale_Price)) +
+  geom_point(alpha=0.4)+
+  scale_y_continuous(labels = scales::comma)+
+  geom_smooth(method = "lm", se = F)+
+labs(title = "Distribution of lot area with sale price",x = "Lot Area (in sq ft)",y = "Sale Price (in $)")
+
+```
+```{r}
+print(paste0("Correlation : ",cor(lot_out$Sale_Price,lot_out$Lot_Area)))
+```
+Sale price and lot area shows positive,linear and moderately strong relationship.Meaning,as the lot area increases,sale price tends to increase.
+
+
+```{r}
+
+ggplot(ames_n,
+       aes(x = Bedroom_AbvGr, y = Full_Bath)) +
+  geom_point()+
+  geom_smooth(method = "lm", se = F)+
+labs(title = "Distribution of number of bathrooms with number of bedrooms",x = "Number of Bedrooms",y = "Number of Bathrooms")
+
+```
+
+
+```{r}
+print(paste0("Correlation : ", cor(ames_n$Bedroom_AbvGr,ames_n$Full_Bath)))
+```
+The graph between Number of bedrooms and Number of Bathrooms shows linear and slightly positive trend with little weak relationship.
+
+
+```{r}
+
+ggplot(ames_n,
+       aes(x = Bedroom_AbvGr, y = Garage_Cars)) +
+  geom_point()+
+labs(title = "Distribution of car capacity in garage with number of bedrooms",x = "Number of Bedrooms",y = "Car Capacity in Garage ")+
+geom_smooth(method = "lm", se = F)
+
+```
+
+```{r}
+print(paste0("Correlation : ", cor(ames_n$Bedroom_AbvGr,ames_n$Garage_Cars)))
+```
+The graph between Number of bedrooms and capacity of cars in garage shows linear and slightly positive trend with weak relationship.
+
+
+
+
+```{r}
+
+ggplot(ames_n,
+       aes(y = Garage_Area, x = Garage_Cars)) +
+  geom_point(fill = "skyblue2",alpha=0.3)+
+labs(title = "Distribution of car capacity in garage with Garage area",x = "Capacity of cars in garage ",y = "Garage Area (in sq ft) ")+
+  geom_smooth(method = "lm", se = F)
+
+
+```
+
+```{r}
+print(paste0("Correlation : ", cor(ames_n$Garage_Area,ames_n$Garage_Cars)))
+```
+
+The graph between Garage area (in sq ft) and capacity of cars in garage shows linear and  positive trend with a strong relationship.
+
+
+```{r}
+ggplot(ames_n,
+       aes(x = TotRms_AbvGrd, y = Gr_Liv_Area)) +
+  geom_point(alpha=0.3)+
+labs(title = "Distribution of living area with total number of rooms",x = "Total Rooms",y = "Living Area in (sq ft)")+
+  geom_smooth(method = "lm", se = F)
+```
+
+```{r}
+print(paste0("Correlation : ", cor(ames_n$TotRms_AbvGrd,ames_n$Gr_Liv_Area)))
+```
+The graph between Living area (in sq ft) and total rooms shows linear and positive trend with a strong relationship.
+
+
+```{r}
+
+ggplot(ames_n,
+       aes(x = First_Flr_SF, y = Sale_Price)) +
+  geom_point(alpha=0.3)+
+   scale_y_continuous(labels = scales::comma)+
+  geom_smooth(method = "lm", se = F)+
+labs(title = " Distribution of First Floor Area with sales price ", x = " First Floor Area (in sq ft) ", y = " Sale Price ($) ")
+
+```
+
+```{r}
+
+print(paste0("Correlation : ", cor(ames_n$First_Flr_SF,ames_n$Sale_Price)))
+
+```
+
+
+```{r}
+
+kkk <- cor(ames_n)
+round(kkk, 2)
+
+```
+
+
+## Multivariate
+
+
+```{r}
+
+ggplot(data = ames_n,aes(x = TotRms_AbvGrd, y = Bedroom_AbvGr)) +
+  geom_point(alpha=0.3) +
+  facet_grid(Kitchen_AbvGr ~. )+
+  geom_smooth(method = "lm", se = F)
+
+```
+
+
+
+```{r}
+ggplot(data = ames_n) +
+  geom_point(mapping = aes(x = TotRms_AbvGrd, y = Lot_Area),alpha=0.3) +
+  facet_wrap(~ Fireplaces)
+
+```
+
+
+```{r}
+ggplot(ames_n,
+       aes(x = TotRms_AbvGrd, y = log10(Sale_Price),color=Year_Sold)) +
+  geom_point(alpha=0.3)+
+labs(title = "Distribution of total number of rooms with the sales price",x = "Total Rooms",y = "Sales Price")+
+  geom_smooth(method = "lm", se = F)
+
+```
+
+
+```{r}
+ggplot(ames_n,
+       aes(x = TotRms_AbvGrd, y = (Sale_Price),color=Year_Sold) )+
+  geom_point(alpha=0.3)+
+labs(title = "Distribution of total number of rooms with the sales price",x = "Total Rooms",y = "Sales Price")+
+   geom_smooth(method = "lm", se = F)+
+   facet_wrap(~Year_Sold )
+```
+
+
+# Response Variable
+
+`Sale_Price` is the response variable in `Ames` dataset. It is not normally distributed. We are transforming it using filtering the outliers. We consider all sale price values greater than 339500 as outliers.
+
+```{r}
+
+summary(ames_n$Sale_Price)
+y=rnorm(ames_n$Sale_Price)
+hist(y,main="Normal Distribution", col="darkorange")
+
+print(paste0("IQR: ", IQR(ames_n$Sale_Price)))
+
+
+out = 213500 + 1.5 * (84000) 
+
+print(paste0("out = 213500 + 1.5 * (84000) which is ", out))
+
+```
+
+Here, Mean > Median so it is right/positive skewed. Moderately skewed. 
+
+
+```{r}
+
+# print(paste0("Correlation of sale price and year built: ", cor(ames_n$Sale_Price,ames_n$TotRms_AbvGrd)))
+# 
+# print(paste0("Correlation of sale price and total Area: ", cor(ames_n$Sale_Price,ames_n$Lot_Area)))
+# 
+# print(paste0("Correlation of sale price and total Year: ", cor(ames_n$Sale_Price,ames_n$Total_Year)))
+
+```
+
+
+```{r}
+# tt_cor <- cor(tt_n)
+# round(tt_cor, 2)
+# options(max.print=1000000)
+
+```
+
+
+
+
+```{r}
+ames_n <- ames_n %>% 
+  mutate(Total_Area = Gr_Liv_Area+Garage_Area+First_Flr_SF,Total_Bsmt_SF,
+         Total_Year = Year_Sold - Year_Remod_Add)
+```
+
+
+# Modeling {.tabset}
+
+## Model 1 (Provide an appropriate heading)
+
+```{r}
+
+tt <- subset(ames_n,ames_n$Sale_Price < 339500)
+
+
+ tt_n <- ames_n %>% 
+  mutate(Total_Area = Gr_Liv_Area+Garage_Area+First_Flr_SF,Total_Bsmt_SF,
+         Total_Year = Year_Sold - Year_Remod_Add)
+
+```
+
+
+```{r}
+
+ggplot(tt_n,
+       aes(x = Total_Year, y = Sale_Price)) +
+  geom_point(alpha=0.3)+
+  scale_y_continuous(labels = scales::comma)+
+labs(title = "Distribution of total year with Sale price",x = "Total Year",y = "Sale Price")+
+  geom_smooth(method = "lm", se = F)
+  
+```
+
+```{r}
+model1_fit = lm(Sale_Price ~ Total_Year,data = tt_n)
+
+model1_fit
+
+summary(model1_fit)
+
+
+```
+```{r}
+print( paste0("Model : ", "$$", extract_eq(model1_fit), "$$") )
+
+#extract_eq(model1_fit)
+
+```
+
+```{r}
+print( paste0("Model Coefs.: ", "$$", extract_eq(model1_fit, use_coefs = TRUE), "$$") )
+#extract_eq(model1_fit, use_coefs = TRUE)
+```
+
+
+As seen from the above data the intercepts of Sale Price and Total Year is estimated 228990.67 which is positive. And , the slope of the linear regression is downwards. 
+
+
+## Model 2 (Provide an appropriate heading)
+
+
+```{r}
+
+ggplot(tt_n,
+       aes(x = Total_Area, y = Sale_Price)) +
+  geom_point(alpha=0.3)+
+  scale_y_continuous(labels = scales::comma)+
+labs(title = "Distribution of total area with Sale price",x = " Total Area ",y = "Sale Price")+
+  geom_smooth(method = "lm", se = F)
+
+```
+
+```{r}
+model2_fit = lm(Sale_Price ~ Total_Area,data = tt_n)
+
+model2_fit
+
+summary(model2_fit)
+
+# extract_eq(model2_fit)
+# 
+# extract_eq(model2_fit, use_coefs = TRUE)
+```
+```{r}
+print( paste0("Model : ", "$$", extract_eq(model2_fit), "$$") )
+
+#extract_eq(model1_fit)
+
+```
+
+```{r}
+print( paste0("Model Coefs.: ", "$$", extract_eq(model2_fit, use_coefs = TRUE), "$$") )
+#extract_eq(model1_fit, use_coefs = TRUE)
+```
+As seen from the above data the intercepts of Sale Price and Total Area is estimated -32539.05 which is negative And , the slope of the linear regression is upwards.
+
+
+## Model 3 (Provide an appropriate heading)
+
+```{r}
+
+ggplot(tt_n,
+       aes(x = TotRms_AbvGrd, y = Sale_Price)) +
+  geom_point(alpha=0.3)+
+  scale_y_continuous(labels = scales::comma)+
+labs(title = "Distribution of total Rooms with Sale price",x = "Total Rooms",y = "Sale Price")+
+  geom_smooth(method = "lm", se = F)
+
+```
+
+```{r}
+model3_fit = lm(Sale_Price ~ TotRms_AbvGrd,data = tt_n)
+
+model3_fit
+
+summary(model3_fit)
+
+# extract_eq(model3_fit)
+# 
+# extract_eq(model3_fit, use_coefs = TRUE)
+```
+
+```{r}
+print( paste0("Model : ", "$$", extract_eq(model3_fit), "$$") )
+
+
+```
+
+```{r}
+print( paste0("Model Coefs.: ", "$$", extract_eq(model3_fit, use_coefs = TRUE), "$$") )
+
+```
+As seen from the above data the intercepts of Sale Price and Total Rooms is estimated 18665.4 which is positive And , the slope of the linear regression is upwards.
+
+
+
+## Model 4 (Provide an appropriate heading)
+
+```{r}
+ggplot(tt_n,
+       aes(x = Garage_Cars, y = Sale_Price)) +
+  geom_point(alpha=0.3)+
+  scale_y_continuous(labels = scales::comma)+
+labs(title = "Distribution of total car capacity in garage with Sale price",x = "Car Capacity in garage",y = "Sale Price")+
+  geom_smooth(method = "lm", se = F)
+```
+
+```{r, results="asis"}
+model4_fit = lm(Sale_Price ~ Garage_Cars,data = tt_n)
+
+broom::tidy(model4_fit)
+
+model4_fit
+
+summary(model4_fit)
+
+#extract_eq(model4_fit)
+print( paste0("Model : ", "$$", extract_eq(model4_fit), "$$") )
+print( paste0("Model Coefs.: ", "$$", extract_eq(model4_fit, use_coefs = TRUE), "$$") )
+#extract_eq(model4_fit, use_coefs = TRUE)
+```
+
+As seen from the above data the intercepts of Sale Price and Car Capacity in garage is estimated 60753 which is positive And , the slope of the linear regression is upwards.
+
+
+## Model Assessment
+
+Assessing our models to get the best one. 
+```{r}
+library(modelsummary)
+
+models <- list(model1_fit,model2_fit,model3_fit)
+
+modelsummary(models)
+```
+
+## Model Diagnostics
+
+We chose the best model as pair of Sale_Price and Total_Area has the higher R2 value. Higher R2 is a measure of getting the best fitting model. R2 value is used to predict the dependency value of a model on which we can rely..
+
+
+
+
+
+### co-relation between sale price and ground floor living area
+
+```{r}
+  
+# summarise(cor(as.numeric(tt_n$Sale_Price) ,tt_n$Lot_Area))
+
+```
+```{r}
+tidy(model2_fit)
+```
+
+
+
+```{r}
+glance(model2_fit)
+```
+```{r}
+ggplot(tt_n) +
+  aes(x = Total_Area, y = Sale_Price) +
+  geom_point(shape = "circle", size = 1L, colour = "#112446") +
+  labs(
+    x = "Total Area",
+    y = "Sale Price",
+    title = "Distribution of total area with Sale price"
+  ) +
+  theme_minimal() +
+  geom_smooth(method = "lm", se = FALSE, formula = 'y~x')
+  
+
+```
+To assess whether the linear model is reliable or not, Three checkings are required. (1) linearity, (2) nearly normal residuals, and (3) constant variability.
+
+```{r}
+model_aug <- augment(model2_fit)
+
+model_aug
+```
+
+### Linearity:
+
+In above graph we already checked if the co-relation between sale price and Total area is linear using a scatter plot. Now,We should also verify this condition with a plot of the residuals vs. fitted (predicted) values.
+
+```{r}
+ggplot(data = model_aug, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  xlab("Fitted values") +
+  ylab("Residuals")
+```
+### Nearly normal residuals: 
+
+To check this condition is met or not, Lets look at a histogram of the residuals.
+```{r}
+ggplot(data = model_aug, aes(x = .resid)) +
+  geom_histogram(aes(colour="red")) +
+  xlab("Residuals")
+```
+
+
+
+
+
+
+## Data Transformation and Re-fitting the Best Model
+
+The best selected model is Sale Price and Ground Living Area. 
+
+```{r}
+
+
+
+ggplot(tt_n) +
+  aes(x = Total_Area, y = Sale_Price) +
+  geom_point()+
+  geom_smooth(se=FALSE,method = "gam", formula = y ~ x)+
+  labs(
+    x = "Total Area",
+    y = "Sale Price",
+    title = "Distribution of total area with Sale price"
+  )
+
+```
+
+## Interpret the slope: 
+
+If the Total Housing area is increased by 1000 square feet, we predict the           Sale price of the house will increase by approximately $1,24,980. 
+
+## Interpret the intercept:
+
+If the Total Housing area is increased by 0 square feet, we predict the 
+Sale price of the house will increase by approximately $13,290.
+
+
+## Interpret the strength:
+
+The strength of the model is represented by the R-squared which is 50%
+
+
+```{r}
+summary(model2_fit)
+```
+
+```{r}
+paste('y =', coef(model2_fit)[[2]], '* x', '+', coef(model2_fit)[[1]])
+```
+
+
+
+# Storyboard
+
+```{r figurename1, echo=FALSE, fig.cap="my caption", out.width = '80%'}
+knitr::include_graphics("sb.png")
+
+```
+
+
+```{r}
+
+sessionInfo()
+
+```
+
+
+
